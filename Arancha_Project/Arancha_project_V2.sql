@@ -7,8 +7,8 @@ USE Dhe_Hejking_Store;
 -- Drop all tables and views --
 
 DROP VIEW IF EXISTS TopSellingStaff;
-Drop VIEW IF EXISTS OrderView;
-DROP VIEW CustomerProductPreferences;
+DROP VIEW IF EXISTS OrderView;
+DROP VIEW IF EXISTS CustomerProductPreferences;
 
 DROP TABLE IF EXISTS Categories;
 DROP TABLE IF EXISTS Category;
