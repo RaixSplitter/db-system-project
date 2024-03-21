@@ -1,24 +1,28 @@
 
 DROP DATABASE IF EXISTS Dhe_Hejking_Store;
-
 CREATE DATABASE IF NOT EXISTS Dhe_Hejking_Store;
 
 USE Dhe_Hejking_Store;
 
--- Drop all tables --
+-- Drop all tables and views --
+
+DROP VIEW IF EXISTS TopSellingStaff;
+DROP VIEW IF EXISTS OrderView;
+DROP VIEW IF EXISTS CustomerProductPreferences;
+
 DROP TABLE IF EXISTS Categories;
 DROP TABLE IF EXISTS Category;
-DROP TABLE IF EXISTS Takes;
 DROP TABLE IF EXISTS Stock;
-DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS OrderItem;
-DROP TABLE IF EXISTS Customer;
+DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS Products;
 DROP TABLE IF EXISTS StaffPrivateInfo;
 DROP TABLE IF EXISTS Staff;
 DROP TABLE IF EXISTS Store;
+DROP TABLE IF EXISTS Customer;
 
 -- Create tables --
+
 CREATE TABLE Store (
     StoreID VARCHAR(5),
     StoreName VARCHAR(20) NOT NULL,
@@ -26,6 +30,7 @@ CREATE TABLE Store (
     Telephone VARCHAR(8),
     PRIMARY KEY (StoreID)
 );
+
 
 CREATE TABLE Products (
     ProductID VARCHAR(5),
@@ -48,6 +53,7 @@ CREATE TABLE Categories (
     FOREIGN KEY(ProductID) REFERENCES Products ON DELETE CASCADE,
     FOREIGN KEY(CategoryID) REFERENCES Category ON DELETE CASCADE
 );
+
 
 CREATE TABLE Stock (
     ProductID VARCHAR(5),
@@ -111,6 +117,19 @@ CREATE TABLE OrderItem (
     FOREIGN KEY (ProductID) REFERENCES Products);
 
 
+-- TRIGGER PreventHouseDeletion
+DELIMITER //
+CREATE TRIGGER PreventHouseDeletion
+BEFORE DELETE ON Store
+FOR EACH ROW
+BEGIN
+    IF OLD.StoreID = 'House' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot delete the House store.';
+    END IF;
+END//
+DELIMITER ;
+
 -- UPDATE TOTAL PRICE TRIGGER
 CREATE TRIGGER UpdateTotalPrice
 
@@ -134,6 +153,8 @@ END;
 // 
 DELIMITER;
 
+
+
 -- TRIGGER updates the stock quantity in the Stock table whenever a new order is placed
 DELIMITER //
 CREATE TRIGGER UpdateStockQuantity
@@ -152,19 +173,8 @@ END;
 DELIMITER ;
 
 
-/*
--- Delete all data from tables with foreign key constraints --
-DELETE FROM Categories;
-DELETE FROM Stock;
-DELETE FROM Orders;
-DELETE FROM OrderItem;
-DELETE FROM StaffPrivateInfo;
-DELETE FROM Staff;
-DELETE FROM Customer;
-DELETE FROM Products;
-DELETE FROM Store;
-DELETE FROM Category;
-*/
+
+-- POPULATE THE TABLES --
 
 -- Insert values into Store table --
 INSERT Store (StoreID, StoreName, Address, Telephone) VALUES
@@ -280,3 +290,157 @@ INSERT INTO OrderItem (OrderID, SerialID, OrderQuantity, ProductID, BatchPrice) 
 (1003, 2, 2, '11111', 701.90),
 (1004, 1, 3, '54323', 1499.97);
 
+
+-- VIEWS --
+-- 1. VIEW OrderView: shows order ID, staff name, customer ID, and order date.
+
+CREATE VIEW OrderView AS
+SELECT O.OrderID, SPI.FirstName AS StaffName, O.CustomerID, O.OrderDate
+FROM Orders O
+JOIN Staff S ON O.StaffID = S.StaffID
+JOIN StaffPrivateInfo SPI ON S.StaffID = SPI.StaffID;
+
+-- 2. VIEW CustomerProductPreferences shows which products are preferred by 
+-- which customers and which staff member sells them.
+
+CREATE VIEW CustomerProductPreferences AS
+SELECT 
+    C.CustomerID,
+    C.FirstName AS CustomerFirstName,
+    C.Surname AS CustomerSurname,
+    P.ProductID,
+    P.ProductName,
+    SPI.FirstName AS StaffFirstName,
+    SPI.Surname AS StaffSurname
+FROM 
+    Customer C
+JOIN 
+    Orders O ON C.CustomerID = O.CustomerID
+JOIN 
+    OrderItem OI ON O.OrderID = OI.OrderID
+JOIN 
+    Products P ON OI.ProductID = P.ProductID
+JOIN 
+    Staff S ON O.StaffID = S.StaffID
+JOIN 
+    StaffPrivateInfo SPI ON S.StaffID = SPI.StaffID;
+    
+    
+-- 3. VIEW TopSellingStaff shows which staff member has sold
+-- the most products in each category.
+CREATE VIEW TopSellingStaff AS
+SELECT 
+    SPI.StaffID,
+    SPI.FirstName,
+    SPI.Surname,
+    C.CategoryID,
+    COUNT(*) AS TotalSales
+FROM 
+    StaffPrivateInfo SPI
+JOIN 
+    Orders O ON SPI.StaffID = O.StaffID
+JOIN 
+    OrderItem OI ON O.OrderID = OI.OrderID
+JOIN 
+    Products P ON OI.ProductID = P.ProductID
+JOIN 
+    Categories C ON P.ProductID = C.ProductID
+GROUP BY 
+    SPI.StaffID, SPI.FirstName, SPI.Surname, C.CategoryID
+ORDER BY 
+    TotalSales DESC;
+
+-- VIEW 4 MostSoldBrandAndBuyer: shows which brand is the most sold and who buys it
+CREATE VIEW MostSoldBrandAndBuyer AS
+SELECT 
+    P.Brand,
+    COUNT(*) AS TotalSales,
+    C.CustomerID,
+    CONCAT(C.FirstName, ' ', C.Surname) AS CustomerName,
+    SPI.FirstName AS StaffFirstName,
+    SPI.Surname AS StaffSurname
+FROM 
+    Orders O
+JOIN 
+    OrderItem OI ON O.OrderID = OI.OrderID
+JOIN 
+    Products P ON OI.ProductID = P.ProductID
+JOIN 
+    Customer C ON O.CustomerID = C.CustomerID
+LEFT JOIN 
+    Staff S ON O.StaffID = S.StaffID
+LEFT JOIN 
+    StaffPrivateInfo SPI ON S.StaffID = SPI.StaffID
+GROUP BY 
+    P.Brand, C.CustomerID, C.FirstName, C.Surname, SPI.FirstName, SPI.Surname
+ORDER BY 
+    TotalSales DESC;
+
+
+
+-- COMMENTS:
+-- We need a before delete trigger for StoreID
+-- The triggger stock must be moved to a different store
+-- This means the stock is placed in another store which can be one with an specific ID 'House'
+-- Trigger: House can never be deleted. 
+-- If a store is deleted, the storeID for that stock becomes 'HOUSE'
+
+
+
+-- DRAFT TRIGGER MoveStockAfterClosure, NEEDS DEBUGGING in the 4th DECLARE --
+
+DELIMITER //
+
+CREATE TRIGGER MoveStockAfterClosure
+AFTER DELETE ON Store
+FOR EACH ROW
+BEGIN
+    DECLARE productID_var VARCHAR(5);
+    DECLARE stockQuantity_var INT;
+    DECLARE done INT DEFAULT FALSE;
+
+    IF OLD.StoreID != 'House' THEN
+		-- Cursor to iterate through the stocks of the closing store
+		DECLARE stock_cursor CURSOR FOR
+			SELECT ProductID, StockQuantity
+            FROM Stock
+            WHERE StoreID = OLD.StoreID;
+        
+        -- Declare continue handler to exit loop when cursor is done
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        
+        OPEN stock_cursor;
+        
+        read_loop: LOOP
+            FETCH stock_cursor INTO productID_var, stockQuantity_var;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            
+            -- Check if the product already exists in the 'House' store
+            SELECT COUNT(*)
+            INTO @exists
+            FROM Stock
+            WHERE ProductID = productID_var AND StoreID = 'House';
+            
+            IF @exists > 0 THEN
+                -- Update the stock quantity in the 'House' store
+                UPDATE Stock
+                SET StockQuantity = StockQuantity + stockQuantity_var
+                WHERE ProductID = productID_var AND StoreID = 'House';
+            ELSE
+                -- Insert new stock record for the product in the 'House' store
+                INSERT INTO Stock (ProductID, StoreID, StockQuantity)
+                VALUES (productID_var, 'House', stockQuantity_var);
+            END IF;
+            
+            -- Delete the stock record from the closing store
+            DELETE FROM Stock
+            WHERE ProductID = productID_var AND StoreID = OLD.StoreID;
+        END LOOP;
+        
+        CLOSE stock_cursor;
+    END IF;
+END//
+
+DELIMITER ;
