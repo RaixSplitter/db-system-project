@@ -6,6 +6,11 @@ USE Dhe_Hejking_Store;
 
 -- Drop all tables and views --
 
+DROP TRIGGER IF EXISTS UpdateTotalPrice;
+DROP TRIGGER IF EXISTS UpdateStockQuantity;
+
+DROP TRIGGER IF EXISTS PreventHouseDeletion;
+
 DROP VIEW IF EXISTS TopSellingStaff;
 DROP VIEW IF EXISTS OrderView;
 DROP VIEW IF EXISTS CustomerProductPreferences;
@@ -131,7 +136,6 @@ END//
 DELIMITER ;
 
 -- UPDATE TOTAL PRICE TRIGGER
-CREATE TRIGGER UpdateTotalPrice
 
 DELIMITER //
 CREATE TRIGGER UpdateTotalPrice
@@ -295,10 +299,12 @@ INSERT INTO OrderItem (OrderID, SerialID, OrderQuantity, ProductID, BatchPrice) 
 -- 1. VIEW OrderView: shows order ID, staff name, customer ID, and order date.
 
 CREATE VIEW OrderView AS
-SELECT O.OrderID, SPI.FirstName AS StaffName, O.CustomerID, O.OrderDate
+SELECT O.OrderID, OI.ORDERQUANTITY, SPI.FirstName AS StaffName, O.CustomerID, O.OrderDate
 FROM Orders O
 JOIN Staff S ON O.StaffID = S.StaffID
+JOIN ORDERITEM OI ON OI.ORDERID = O.ORDERID
 JOIN StaffPrivateInfo SPI ON S.StaffID = SPI.StaffID;
+
 
 -- 2. VIEW CustomerProductPreferences shows which products are preferred by 
 -- which customers and which staff member sells them.
@@ -386,61 +392,60 @@ ORDER BY
 -- If a store is deleted, the storeID for that stock becomes 'HOUSE'
 
 
+-- -- DRAFT TRIGGER MoveStockAfterClosure, NEEDS DEBUGGING in the 4th DECLARE --
 
--- DRAFT TRIGGER MoveStockAfterClosure, NEEDS DEBUGGING in the 4th DECLARE --
+-- DELIMITER //
 
-DELIMITER //
+-- CREATE TRIGGER MoveStockAfterClosure
+-- AFTER DELETE ON Store
+-- FOR EACH ROW
+-- BEGIN
+--     DECLARE productID_var VARCHAR(5);
+--     DECLARE stockQuantity_var INT;
+--     DECLARE done INT DEFAULT FALSE;
 
-CREATE TRIGGER MoveStockAfterClosure
-AFTER DELETE ON Store
-FOR EACH ROW
-BEGIN
-    DECLARE productID_var VARCHAR(5);
-    DECLARE stockQuantity_var INT;
-    DECLARE done INT DEFAULT FALSE;
-
-    IF OLD.StoreID != 'House' THEN
-		-- Cursor to iterate through the stocks of the closing store
-		DECLARE stock_cursor CURSOR FOR
-			SELECT ProductID, StockQuantity
-            FROM Stock
-            WHERE StoreID = OLD.StoreID;
+--     IF OLD.StoreID != 'House' THEN
+-- 		-- Cursor to iterate through the stocks of the closing store
+-- 		DECLARE stock_cursor CURSOR FOR
+-- 			SELECT ProductID, StockQuantity
+--             FROM Stock
+--             WHERE StoreID = OLD.StoreID;
         
-        -- Declare continue handler to exit loop when cursor is done
-        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+--         -- Declare continue handler to exit loop when cursor is done
+--         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
         
-        OPEN stock_cursor;
+--         OPEN stock_cursor;
         
-        read_loop: LOOP
-            FETCH stock_cursor INTO productID_var, stockQuantity_var;
-            IF done THEN
-                LEAVE read_loop;
-            END IF;
+--         read_loop: LOOP
+--             FETCH stock_cursor INTO productID_var, stockQuantity_var;
+--             IF done THEN
+--                 LEAVE read_loop;
+--             END IF;
             
-            -- Check if the product already exists in the 'House' store
-            SELECT COUNT(*)
-            INTO @exists
-            FROM Stock
-            WHERE ProductID = productID_var AND StoreID = 'House';
+--             -- Check if the product already exists in the 'House' store
+--             SELECT COUNT(*)
+--             INTO @exists
+--             FROM Stock
+--             WHERE ProductID = productID_var AND StoreID = 'House';
             
-            IF @exists > 0 THEN
-                -- Update the stock quantity in the 'House' store
-                UPDATE Stock
-                SET StockQuantity = StockQuantity + stockQuantity_var
-                WHERE ProductID = productID_var AND StoreID = 'House';
-            ELSE
-                -- Insert new stock record for the product in the 'House' store
-                INSERT INTO Stock (ProductID, StoreID, StockQuantity)
-                VALUES (productID_var, 'House', stockQuantity_var);
-            END IF;
+--             IF @exists > 0 THEN
+--                 -- Update the stock quantity in the 'House' store
+--                 UPDATE Stock
+--                 SET StockQuantity = StockQuantity + stockQuantity_var
+--                 WHERE ProductID = productID_var AND StoreID = 'House';
+--             ELSE
+--                 -- Insert new stock record for the product in the 'House' store
+--                 INSERT INTO Stock (ProductID, StoreID, StockQuantity)
+--                 VALUES (productID_var, 'House', stockQuantity_var);
+--             END IF;
             
-            -- Delete the stock record from the closing store
-            DELETE FROM Stock
-            WHERE ProductID = productID_var AND StoreID = OLD.StoreID;
-        END LOOP;
+--             -- Delete the stock record from the closing store
+--             DELETE FROM Stock
+--             WHERE ProductID = productID_var AND StoreID = OLD.StoreID;
+--         END LOOP;
         
-        CLOSE stock_cursor;
-    END IF;
-END//
+--         CLOSE stock_cursor;
+--     END IF;
+-- END//
 
-DELIMITER ;
+-- DELIMITER ;
