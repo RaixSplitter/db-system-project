@@ -7,6 +7,7 @@ DROP VIEW IF EXISTS OrderView;
 
 CREATE VIEW OrderView AS
 SELECT O.OrderID, OI.ProductID, OI.OrderQuantity, SPI.FirstName AS StaffName, O.CustomerID, O.OrderDate
+
 FROM Orders O
 JOIN Staff S ON O.StaffID = S.StaffID
 JOIN OrderItem OI ON OI.ORDERID = O.ORDERID
