@@ -24,6 +24,7 @@ CREATE TABLE Store (
     StoreName VARCHAR(20) NOT NULL,
     Address VARCHAR(30) NOT NULL,
     Telephone VARCHAR(8),
+    Status ENUM('Active', 'Inactive'),
     PRIMARY KEY (StoreID)
 );
 
@@ -63,7 +64,7 @@ CREATE TABLE Stock (
 CREATE TABLE Staff (
     StaffID VARCHAR(5),
     StoreID VARCHAR(5),
-    WorkingStatus ENUM('Active', 'Inactive'),
+    WorkingStatus ENUM('Active', 'Holiday','Inactive'),
     PRIMARY KEY (StaffID),
     FOREIGN KEY (StoreID) REFERENCES Store ON DELETE SET NULL
 );
