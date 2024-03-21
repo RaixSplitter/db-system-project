@@ -10,19 +10,6 @@ DROP TRIGGER IF EXISTS PreventHouseDeletion;
 
 
 
--- TRIGGER PreventHouseDeletion
-DELIMITER //
-CREATE TRIGGER PreventHouseDeletion
-BEFORE DELETE ON Store
-FOR EACH ROW
-BEGIN
-    IF OLD.StoreID = 'House' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot delete the House store.';
-    END IF;
-END//
-DELIMITER ;
-
 -- UPDATE TOTAL PRICE TRIGGER
 
 DELIMITER //

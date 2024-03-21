@@ -5,7 +5,7 @@ USE Dhe_Hejking_Store;
 -- 1. VIEW OrderView: shows order ID, staff name, customer ID, and order date.
 
 CREATE VIEW OrderView AS
-SELECT O.OrderID, OI.ORDERQUANTITY, SPI.FirstName AS StaffName, O.CustomerID, O.OrderDate
+SELECT O.OrderID, OI.ORDERQUANTITY, SPI.FirstName AS affName, O.CustomerID, O.OrderDate
 FROM Orders O
 JOIN Staff S ON O.StaffID = S.StaffID
 JOIN ORDERITEM OI ON OI.ORDERID = O.ORDERID
