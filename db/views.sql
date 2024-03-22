@@ -7,7 +7,6 @@ DROP VIEW IF EXISTS OrderView;
 
 CREATE VIEW OrderView AS
 SELECT O.OrderID, OI.ProductID, OI.OrderQuantity, SPI.FirstName AS StaffName, O.CustomerID, O.OrderDate
-
 FROM Orders O
 JOIN Staff S ON O.StaffID = S.StaffID
 JOIN OrderItem OI ON OI.ORDERID = O.ORDERID
@@ -17,8 +16,7 @@ JOIN StaffPrivateInfo SPI ON S.StaffID = SPI.StaffID;
 
 -- 2. VIEW CustomerProductPreferences shows which products are preferred by 
 -- which customers and which staff member sells them.
-select * from CustomerProductPreferences;
-DROP VIEW CustomerProductPreferences;
+DROP VIEW CustomerProductPreferences IF EXISTS;
 CREATE VIEW CustomerProductPreferences AS
 SELECT 
     CONCAT(C.CustomerID, ' ', C.FirstName) AS CustomerName,
@@ -40,12 +38,11 @@ JOIN
 JOIN 
     StaffPrivateInfo SPI ON S.StaffID = SPI.StaffID;
     
-SELECT * FROM CustomerProductPreferences;
+
 
 -- 3. VIEW TopSellingStaff shows which staff member has sold
 -- the most products in each category.
-select * from TopSellingStaff;
-
+DROP VIEW TopSellingStaff IF EXISTS;
 CREATE VIEW TopSellingStaff AS
 SELECT 
     SPI.StaffID,

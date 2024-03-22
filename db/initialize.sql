@@ -22,9 +22,9 @@ DROP TABLE IF EXISTS Customer;
 CREATE TABLE Store (
     StoreID VARCHAR(5),
     StoreName VARCHAR(20) NOT NULL,
-    Address VARCHAR(30) NOT NULL,
+    StoreAddress VARCHAR(30) NOT NULL,
     Telephone VARCHAR(8),
-    Status ENUM('Active', 'Inactive'),
+    StoreStatus ENUM('Active', 'Inactive'),
     PRIMARY KEY (StoreID)
 );
 
@@ -73,7 +73,7 @@ CREATE TABLE StaffPrivateInfo (
     StaffID VARCHAR(20),
     FirstName VARCHAR(20) NOT NULL,
     Surname VARCHAR(20) NOT NULL,
-    Address VARCHAR(20),
+   StaffAddress VARCHAR(20),
     Telephone VARCHAR(8),
     FOREIGN KEY (StaffID) REFERENCES Staff ON DELETE CASCADE
 );
@@ -82,7 +82,7 @@ CREATE TABLE Customer (
     CustomerID VARCHAR(5),
     FirstName VARCHAR(20),
     Surname VARCHAR(20),
-    Address VARCHAR(20),
+    CustomerAddress VARCHAR(20),
     Telephone VARCHAR(8),
     PRIMARY KEY (CustomerID)
 );
