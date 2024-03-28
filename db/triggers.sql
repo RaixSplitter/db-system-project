@@ -30,7 +30,7 @@ BEGIN
     WHERE OrderID = NEW.OrderID;
 END;
 // 
-DELIMITER;
+DELIMITER ;
 
 
 
