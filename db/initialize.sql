@@ -88,7 +88,7 @@ CREATE TABLE Customer (
 );
 
 CREATE TABLE Orders (
-    OrderID INT(8),
+    OrderID INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     CustomerID VARCHAR(5),
     StoreID VARCHAR(5),
     StaffID VARCHAR(5),
@@ -96,7 +96,6 @@ CREATE TABLE Orders (
     OrderDate DATE,
     ShippingDate DATE,
     RequiredDate DATE,
-    PRIMARY KEY (OrderID),
     FOREIGN KEY (CustomerID) REFERENCES Customer ON DELETE SET NULL,
     FOREIGN KEY (StoreID) REFERENCES Store ON DELETE SET NULL,
     FOREIGN KEY (StaffID) REFERENCES Staff ON DELETE SET NULL,
@@ -104,12 +103,13 @@ CREATE TABLE Orders (
     CONSTRAINT RequiredDate CHECK (RequiredDate > ShippingDate));    
 
 CREATE TABLE OrderItem (
-    OrderID INT(8),
-    SerialID INT NOT NULL,
+    OrderID INTEGER UNSIGNED AUTO_INCREMENT,
+    SerialID UUID NOT NULL,
     OrderQuantity INT NOT NULL,
     ProductID VARCHAR(5),
     BatchPrice DECIMAL(7,2),
     PRIMARY KEY (SerialID, OrderID),
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE,
     FOREIGN KEY (ProductID) REFERENCES Products);
+
 
