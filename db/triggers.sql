@@ -10,44 +10,41 @@ DROP TRIGGER IF EXISTS PreventHouseDeletion;
 
 
 
--- UPDATE TOTAL PRICE TRIGGER
+CREATE OR REPLACE PROCEDURE UpdateStockQuantity(IN product_id VARCHAR(5), IN order_quantity INT, IN order_id INT)
+BEGIN
+    -- Update stock quantity in the Stock table
+    UPDATE Stock
+    SET StockQuantity = StockQuantity - order_quantity
+    WHERE ProductID = product_id AND StoreID = (
+        SELECT StoreID FROM Orders WHERE OrderID = order_id
+    );
+END;
 
-DELIMITER //
-CREATE TRIGGER UpdateTotalPrice
-AFTER INSERT ON OrderItem
-FOR EACH ROW
+CREATE OR REPLACE PROCEDURE UpdateTotalPrice(IN order_id INT)
 BEGIN
     DECLARE total DECIMAL(8,2);
     
     -- Calculate total price for the order
     SELECT SUM(BatchPrice * OrderQuantity) INTO total
     FROM OrderItem
-    WHERE OrderID = NEW.OrderID;
+    WHERE OrderID = order_id;
     
     -- Update the total price in the Orders table
     UPDATE Orders
     SET TotalPrice = total
-    WHERE OrderID = NEW.OrderID;
+    WHERE OrderID = order_id;
 END;
-// 
-DELIMITER ;
 
 
-
--- TRIGGER updates the stock quantity in the Stock table whenever a new order is placed
 DELIMITER //
-CREATE TRIGGER UpdateStockQuantity
+
+CREATE OR REPLACE TRIGGER UpdateOrder
 AFTER INSERT ON OrderItem
 FOR EACH ROW
 BEGIN
-    -- Update stock quantity in the Stock table
-    UPDATE Stock
-    SET StockQuantity = StockQuantity - NEW.OrderQuantity
-    WHERE ProductID = NEW.ProductID AND StoreID = (
-        SELECT StoreID FROM Orders WHERE OrderID = NEW.OrderID
-    );
+    CALL UpdateStockQuantity(NEW.ProductID, NEW.OrderQuantity, NEW.OrderID);
+    CALL UpdateTotalPrice(NEW.OrderID);
 END;
-//
 
-DELIMITER ;
+DELIMITER;
 
