@@ -47,8 +47,8 @@ CREATE TABLE Categories (
     ProductID VARCHAR(5),
     CategoryID VARCHAR(5),
     PRIMARY KEY(ProductID, CategoryID),
-    FOREIGN KEY(ProductID) REFERENCES Products ON DELETE CASCADE,
-    FOREIGN KEY(CategoryID) REFERENCES Category ON DELETE CASCADE
+    FOREIGN KEY(ProductID) REFERENCES Products(ProductID) ON DELETE CASCADE,
+    FOREIGN KEY(CategoryID) REFERENCES Category(CategoryID) ON DELETE CASCADE
 );
 
 
@@ -66,16 +66,16 @@ CREATE TABLE Staff (
     StoreID VARCHAR(5),
     WorkingStatus ENUM('Active', 'Holiday','Inactive'),
     PRIMARY KEY (StaffID),
-    FOREIGN KEY (StoreID) REFERENCES Store ON DELETE SET NULL
+    FOREIGN KEY (StoreID) REFERENCES Store(StoreID) ON DELETE SET NULL
 );
 
 CREATE TABLE StaffPrivateInfo (
     StaffID VARCHAR(20),
     FirstName VARCHAR(20) NOT NULL,
     Surname VARCHAR(20) NOT NULL,
-   StaffAddress VARCHAR(20),
+    StaffAddress VARCHAR(20),
     Telephone VARCHAR(8),
-    FOREIGN KEY (StaffID) REFERENCES Staff ON DELETE CASCADE
+    FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE CASCADE
 );
 
 CREATE TABLE Customer (
@@ -96,9 +96,9 @@ CREATE TABLE Orders (
     OrderDate DATE,
     ShippingDate DATE,
     RequiredDate DATE,
-    FOREIGN KEY (CustomerID) REFERENCES Customer ON DELETE SET NULL,
-    FOREIGN KEY (StoreID) REFERENCES Store ON DELETE SET NULL,
-    FOREIGN KEY (StaffID) REFERENCES Staff ON DELETE SET NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID) ON DELETE SET NULL,
+    FOREIGN KEY (StoreID) REFERENCES Store(StoreID) ON DELETE SET NULL,
+    FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL,
     CONSTRAINT ShippingDate CHECK (ShippingDate > OrderDate),
     CONSTRAINT RequiredDate CHECK (RequiredDate > ShippingDate));    
 
@@ -109,7 +109,7 @@ CREATE TABLE OrderItem (
     ProductID VARCHAR(5),
     BatchPrice DECIMAL(7,2),
     PRIMARY KEY (SerialID, OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID));
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE,
-    FOREIGN KEY (ProductID) REFERENCES Products);
 
 

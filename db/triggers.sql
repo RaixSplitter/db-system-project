@@ -35,6 +35,7 @@ BEGIN
     WHERE OrderID = order_id;
 END;
 
+
 DELIMITER //
 
 CREATE OR REPLACE TRIGGER UpdateOrder
