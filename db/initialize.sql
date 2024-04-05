@@ -22,9 +22,9 @@ DROP TABLE IF EXISTS Customer;
 CREATE TABLE Store (
     StoreID VARCHAR(5),
     StoreName VARCHAR(20) NOT NULL,
-    Address VARCHAR(30) NOT NULL,
+    StoreAddress VARCHAR(30) NOT NULL,
     Telephone VARCHAR(8),
-    Status ENUM('Active', 'Inactive'),
+    StoreStatus ENUM('Active', 'Inactive'),
     PRIMARY KEY (StoreID)
 );
 
@@ -47,8 +47,8 @@ CREATE TABLE Categories (
     ProductID VARCHAR(5),
     CategoryID VARCHAR(5),
     PRIMARY KEY(ProductID, CategoryID),
-    FOREIGN KEY(ProductID) REFERENCES Products ON DELETE CASCADE,
-    FOREIGN KEY(CategoryID) REFERENCES Category ON DELETE CASCADE
+    FOREIGN KEY(ProductID) REFERENCES Products(ProductID) ON DELETE CASCADE,
+    FOREIGN KEY(CategoryID) REFERENCES Category(CategoryID) ON DELETE CASCADE
 );
 
 
@@ -66,29 +66,29 @@ CREATE TABLE Staff (
     StoreID VARCHAR(5),
     WorkingStatus ENUM('Active', 'Holiday','Inactive'),
     PRIMARY KEY (StaffID),
-    FOREIGN KEY (StoreID) REFERENCES Store ON DELETE SET NULL
+    FOREIGN KEY (StoreID) REFERENCES Store(StoreID) ON DELETE SET NULL
 );
 
 CREATE TABLE StaffPrivateInfo (
     StaffID VARCHAR(20),
     FirstName VARCHAR(20) NOT NULL,
     Surname VARCHAR(20) NOT NULL,
-    Address VARCHAR(20),
+    StaffAddress VARCHAR(20),
     Telephone VARCHAR(8),
-    FOREIGN KEY (StaffID) REFERENCES Staff ON DELETE CASCADE
+    FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE CASCADE
 );
 
 CREATE TABLE Customer (
     CustomerID VARCHAR(5),
     FirstName VARCHAR(20),
     Surname VARCHAR(20),
-    Address VARCHAR(20),
+    CustomerAddress VARCHAR(20),
     Telephone VARCHAR(8),
     PRIMARY KEY (CustomerID)
 );
 
 CREATE TABLE Orders (
-    OrderID INT(8),
+    OrderID INTEGER UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     CustomerID VARCHAR(5),
     StoreID VARCHAR(5),
     StaffID VARCHAR(5),
@@ -96,20 +96,20 @@ CREATE TABLE Orders (
     OrderDate DATE,
     ShippingDate DATE,
     RequiredDate DATE,
-    PRIMARY KEY (OrderID),
-    FOREIGN KEY (CustomerID) REFERENCES Customer ON DELETE SET NULL,
-    FOREIGN KEY (StoreID) REFERENCES Store ON DELETE SET NULL,
-    FOREIGN KEY (StaffID) REFERENCES Staff ON DELETE SET NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID) ON DELETE SET NULL,
+    FOREIGN KEY (StoreID) REFERENCES Store(StoreID) ON DELETE SET NULL,
+    FOREIGN KEY (StaffID) REFERENCES Staff(StaffID) ON DELETE SET NULL,
     CONSTRAINT ShippingDate CHECK (ShippingDate > OrderDate),
     CONSTRAINT RequiredDate CHECK (RequiredDate > ShippingDate));    
 
 CREATE TABLE OrderItem (
-    OrderID INT(8),
-    SerialID INT NOT NULL,
+    OrderID INTEGER UNSIGNED AUTO_INCREMENT,
+    SerialID UUID NOT NULL,
     OrderQuantity INT NOT NULL,
     ProductID VARCHAR(5),
     BatchPrice DECIMAL(7,2),
     PRIMARY KEY (SerialID, OrderID),
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
-    FOREIGN KEY (ProductID) REFERENCES Products);
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID));
+
 
