@@ -109,7 +109,7 @@ CREATE TABLE OrderItem (
     ProductID VARCHAR(5),
     BatchPrice DECIMAL(7,2),
     PRIMARY KEY (SerialID, OrderID),
-    FOREIGN KEY (ProductID) REFERENCES Products(ProductID));
     FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) ON DELETE CASCADE,
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID));
 
 
